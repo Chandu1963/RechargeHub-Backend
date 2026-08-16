@@ -3,7 +3,6 @@ package com.example.demo.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -17,8 +16,8 @@ public class EmailServiceImpl implements EmailService {
     @Autowired
     private JavaMailSender javaMailSender;
 
-    @Value("${spring.mail.username}")
-    private String fromEmail;
+    // ✅ Verified Brevo Sender Email
+    private final String fromEmail = "edubillichandu768@gmail.com";
 
     @Override
     public void sendEmail(
@@ -44,7 +43,6 @@ public class EmailServiceImpl implements EmailService {
 
         } catch (Exception e) {
 
-            // ✅ Log the error but DO NOT THROW 'e' so login continues cleanly
             logger.error(
                     "SMTP Connection blocked or failed for : {}. Error: {}",
                     toEmail,
