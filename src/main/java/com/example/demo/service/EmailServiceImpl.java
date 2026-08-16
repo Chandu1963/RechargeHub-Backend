@@ -20,8 +20,8 @@ public class EmailServiceImpl implements EmailService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    // ✅ Brevo v3 API Key (Trimmed & Verified)
-    private final String brevoApiKey = "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";
+    // ✅ Verified & Active Brevo v3 HTTPS API Key
+    private final String brevoApiKey = "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";
     private final String brevoApiUrl = "https://api.brevo.com/v3/smtp/email";
 
     @Override
