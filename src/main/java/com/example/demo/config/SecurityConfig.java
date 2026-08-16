@@ -65,8 +65,13 @@ public class SecurityConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(
-                List.of("http://localhost:5173"));
+        // ✅ Allowed origins: Localhost + Deployed Vercel Domain
+        configuration.setAllowedOriginPatterns(
+                List.of(
+                    "http://localhost:5173",
+                    "https://recharge-hub-web.vercel.app",
+                    "https://*.vercel.app"
+                ));
 
         configuration.setAllowedMethods(
                 List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
