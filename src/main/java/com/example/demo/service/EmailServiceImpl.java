@@ -21,7 +21,7 @@ public class EmailServiceImpl implements EmailService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     // ✅ Brevo HTTPS API Key (Port 443 - Never Blocked by Render!)
-    private final String brevoApiKey = "xsmtpsib-8553e434c82691534c18c56d613952687972c7dfccf339bd8ecc272b861dfe30-WW09W4IPkuLPqtFC";
+    private final String brevoApiKey = "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";
     private final String brevoApiUrl = "https://api.brevo.com/v3/smtp/email";
 
     @Override
