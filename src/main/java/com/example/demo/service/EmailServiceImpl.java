@@ -20,7 +20,7 @@ public class EmailServiceImpl implements EmailService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    // ✅ Brevo HTTPS API Key (Port 443 - Never Blocked by Render!)
+    // ✅ Brevo v3 API Key (Trimmed & Verified)
     private final String brevoApiKey = "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";
     private final String brevoApiUrl = "https://api.brevo.com/v3/smtp/email";
 
@@ -33,14 +33,15 @@ public class EmailServiceImpl implements EmailService {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("api-key", brevoApiKey);
+            headers.set("accept", "application/json");
+            headers.set("api-key", brevoApiKey.trim());
 
             Map<String, Object> sender = new HashMap<>();
             sender.put("name", "RechargeHub");
             sender.put("email", "edubillichandu768@gmail.com");
 
             Map<String, Object> recipient = new HashMap<>();
-            recipient.put("email", toEmail);
+            recipient.put("email", toEmail.trim());
 
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("sender", sender);
@@ -52,10 +53,10 @@ public class EmailServiceImpl implements EmailService {
 
             restTemplate.postForEntity(brevoApiUrl, entity, String.class);
 
-            logger.info("Email sent successfully via Brevo HTTPS API to: {}", toEmail);
+            logger.info("OTP Email sent successfully via Brevo HTTPS API to: {}", toEmail);
 
         } catch (Exception e) {
-            logger.error("Failed to send email via Brevo HTTPS API to: {}. Error: {}", toEmail, e.getMessage());
+            logger.error("Failed to send email via Brevo API to: {}. Error: {}", toEmail, e.getMessage());
         }
     }
 }
