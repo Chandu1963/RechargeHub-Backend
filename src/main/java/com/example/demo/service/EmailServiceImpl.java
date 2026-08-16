@@ -1,11 +1,16 @@
 package com.example.demo.service;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -13,11 +18,11 @@ public class EmailServiceImpl implements EmailService {
     private static final Logger logger =
             LoggerFactory.getLogger(EmailServiceImpl.class);
 
-    @Autowired
-    private JavaMailSender javaMailSender;
+    private final RestTemplate restTemplate = new RestTemplate();
 
-    // ✅ Verified Brevo Sender Email
-    private final String fromEmail = "edubillichandu768@gmail.com";
+    // ✅ Brevo HTTPS API Key (Port 443 - Never Blocked by Render!)
+    private final String brevoApiKey = "xsmtpsib-8553e434c82691534c18c56d613952687972c7dfccf339bd8ecc272b861dfe30-WW09W4IPkuLPqtFC";
+    private final String brevoApiUrl = "https://api.brevo.com/v3/smtp/email";
 
     @Override
     public void sendEmail(
@@ -26,33 +31,31 @@ public class EmailServiceImpl implements EmailService {
             String body) {
 
         try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("api-key", brevoApiKey);
 
-            SimpleMailMessage message =
-                    new SimpleMailMessage();
+            Map<String, Object> sender = new HashMap<>();
+            sender.put("name", "RechargeHub");
+            sender.put("email", "edubillichandu768@gmail.com");
 
-            message.setFrom(fromEmail);
-            message.setTo(toEmail);
-            message.setSubject(subject);
-            message.setText(body);
+            Map<String, Object> recipient = new HashMap<>();
+            recipient.put("email", toEmail);
 
-            javaMailSender.send(message);
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("sender", sender);
+            requestBody.put("to", List.of(recipient));
+            requestBody.put("subject", subject);
+            requestBody.put("textContent", body);
 
-            logger.info(
-                    "Email sent successfully to : {}",
-                    toEmail);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+            restTemplate.postForEntity(brevoApiUrl, entity, String.class);
+
+            logger.info("Email sent successfully via Brevo HTTPS API to: {}", toEmail);
 
         } catch (Exception e) {
-
-            logger.error(
-                    "SMTP Connection blocked or failed for : {}. Error: {}",
-                    toEmail,
-                    e.getMessage());
-
-            System.out.println("=========================================");
-            System.out.println("NOTIFICATION BODY:\n" + body);
-            System.out.println("=========================================");
+            logger.error("Failed to send email via Brevo HTTPS API to: {}. Error: {}", toEmail, e.getMessage());
         }
-
     }
-
 }
