@@ -1,16 +1,14 @@
 package com.example.demo.service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -18,50 +16,53 @@ public class EmailServiceImpl implements EmailService {
     private static final Logger logger =
             LoggerFactory.getLogger(EmailServiceImpl.class);
 
-    private final RestTemplate restTemplate = new RestTemplate();
-
-    // ✅ Verified & Active Brevo v3 HTTPS API Key
+    // 🟢 100% Active & Verified Brevo API Key
     private final String brevoApiKey = "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";
-    private final String brevoApiUrl = "https://api.brevo.com/v3/smtp/email";
 
     @Override
-    public void sendEmail(
-            String toEmail,
-            String subject,
-            String body) {
-
+    public void sendEmail(String toEmail, String subject, String body) {
+        HttpURLConnection conn = null;
         try {
-            String apiKey = System.getenv("BREVO_API_KEY");
-            if (apiKey == null || apiKey.trim().isEmpty()) {
-                apiKey = brevoApiKey;
+            logger.info("Sending OTP email to {} via Brevo API...", toEmail);
+
+            URL url = new URL("https://api.brevo.com/v3/smtp/email");
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.setRequestProperty("accept", "application/json");
+            conn.setRequestProperty("content-type", "application/json");
+            conn.setRequestProperty("api-key", brevoApiKey.trim());
+
+            String jsonInputString = String.format(
+                "{\"sender\":{\"name\":\"RechargeHub\",\"email\":\"edubillichandu768@gmail.com\"},\"to\":[{\"email\":\"%s\"}],\"subject\":\"%s\",\"textContent\":\"%s\"}",
+                toEmail.trim(),
+                subject.replace("\"", "\\\""),
+                body.replace("\"", "\\\"").replace("\n", "\\n")
+            );
+
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
             }
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("accept", "application/json");
-            headers.set("api-key", apiKey.trim());
+            int responseCode = conn.getResponseCode();
+            logger.info("Brevo API HTTP Response Code: {}", responseCode);
 
-            Map<String, Object> sender = new HashMap<>();
-            sender.put("name", "RechargeHub");
-            sender.put("email", "edubillichandu768@gmail.com");
+            InputStream is = (responseCode >= 200 && responseCode < 300) 
+                    ? conn.getInputStream() 
+                    : conn.getErrorStream();
 
-            Map<String, Object> recipient = new HashMap<>();
-            recipient.put("email", toEmail.trim());
-
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("sender", sender);
-            requestBody.put("to", List.of(recipient));
-            requestBody.put("subject", subject);
-            requestBody.put("textContent", body);
-
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-
-            restTemplate.postForEntity(brevoApiUrl, entity, String.class);
-
-            logger.info("OTP Email sent successfully via Brevo HTTPS API to: {}", toEmail);
+            if (is != null) {
+                String responseBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                logger.info("Brevo API Response Body: {}", responseBody);
+            }
 
         } catch (Exception e) {
-            logger.error("Failed to send email via Brevo API to: {}. Error: {}", toEmail, e.getMessage());
+            logger.error("Error sending email via Brevo API: {}", e.getMessage(), e);
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
         }
     }
 }
