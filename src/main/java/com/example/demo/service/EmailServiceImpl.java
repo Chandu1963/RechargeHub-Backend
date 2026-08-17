@@ -28,11 +28,14 @@ public class EmailServiceImpl implements EmailService {
                 return;
             }
 
-            logger.info("Sending OTP email via Resend API to: {}", toEmail);
+            // 🟢 Resend Free Tier Rule: Send to registered Resend account email
+            String targetEmail = "chanduanil768@gmail.com";
+
+            logger.info("Sending OTP email for requested recipient {} -> sending to Resend owner email: {}", toEmail, targetEmail);
 
             String jsonInputString = String.format(
                 "{\"from\":\"RechargeHub <onboarding@resend.dev>\",\"to\":[\"%s\"],\"subject\":\"%s\",\"html\":\"<h3>%s</h3>\"}",
-                toEmail.trim(),
+                targetEmail,
                 subject.replace("\"", "\\\""),
                 body.replace("\"", "\\\"").replace("\n", "<br/>")
             );
