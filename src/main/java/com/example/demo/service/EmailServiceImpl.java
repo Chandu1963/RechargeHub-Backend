@@ -1,9 +1,9 @@
 package com.example.demo.service;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
 import org.slf4j.Logger;
@@ -16,53 +16,40 @@ public class EmailServiceImpl implements EmailService {
     private static final Logger logger =
             LoggerFactory.getLogger(EmailServiceImpl.class);
 
+    private final HttpClient httpClient = HttpClient.newHttpClient();
+
     // 🟢 Verified Resend API Key & Endpoint
     private final String resendApiKey = "re_WVaMhRFS_5DrS9YiHf2JCBSaLcNWn2cMc";
     private final String resendApiUrl = "https://api.resend.com/emails";
 
     @Override
     public void sendEmail(String toEmail, String subject, String body) {
-        HttpURLConnection conn = null;
         try {
             logger.info("Sending OTP email to {} via Resend API...", toEmail);
 
-            URL url = new URL(resendApiUrl);
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setDoOutput(true);
-            conn.setRequestProperty("Authorization", "Bearer " + resendApiKey.trim());
-            conn.setRequestProperty("Content-Type", "application/json");
+            String targetEmail = toEmail.trim();
 
             String jsonInputString = String.format(
                 "{\"from\":\"RechargeHub <onboarding@resend.dev>\",\"to\":[\"%s\"],\"subject\":\"%s\",\"html\":\"<h3>%s</h3>\"}",
-                toEmail.trim(),
+                targetEmail,
                 subject.replace("\"", "\\\""),
                 body.replace("\"", "\\\"").replace("\n", "<br/>")
             );
 
-            try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
-                os.write(input, 0, input.length);
-            }
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(resendApiUrl))
+                    .header("Authorization", "Bearer " + resendApiKey.trim())
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonInputString, StandardCharsets.UTF_8))
+                    .build();
 
-            int responseCode = conn.getResponseCode();
-            logger.info("Resend API Response Code: {}", responseCode);
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            InputStream is = (responseCode >= 200 && responseCode < 300) 
-                    ? conn.getInputStream() 
-                    : conn.getErrorStream();
-
-            if (is != null) {
-                String responseBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-                logger.info("Resend API Response Body: {}", responseBody);
-            }
+            logger.info("Resend API Response Code: {}", response.statusCode());
+            logger.info("Resend API Response Body: {}", response.body());
 
         } catch (Exception e) {
             logger.error("Error sending email via Resend API: {}", e.getMessage(), e);
-        } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
         }
     }
 }
