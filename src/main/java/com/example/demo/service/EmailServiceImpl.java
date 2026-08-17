@@ -21,7 +21,7 @@ public class EmailServiceImpl implements EmailService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     // ✅ Verified & Active Brevo v3 HTTPS API Key
-    private final String brevoApiKey = "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";
+    private final String brevoApiKey = "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";
     private final String brevoApiUrl = "https://api.brevo.com/v3/smtp/email";
 
     @Override
@@ -31,10 +31,15 @@ public class EmailServiceImpl implements EmailService {
             String body) {
 
         try {
+            String apiKey = System.getenv("BREVO_API_KEY");
+            if (apiKey == null || apiKey.trim().isEmpty()) {
+                apiKey = brevoApiKey;
+            }
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("accept", "application/json");
-            headers.set("api-key", brevoApiKey.trim());
+            headers.set("api-key", apiKey.trim());
 
             Map<String, Object> sender = new HashMap<>();
             sender.put("name", "RechargeHub");
