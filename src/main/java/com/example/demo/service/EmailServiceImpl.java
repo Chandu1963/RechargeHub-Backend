@@ -1,14 +1,13 @@
 package com.example.demo.service;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+
+import jakarta.mail.internet.MimeMessage;
 
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -16,44 +15,28 @@ public class EmailServiceImpl implements EmailService {
     private static final Logger logger =
             LoggerFactory.getLogger(EmailServiceImpl.class);
 
-    private final HttpClient httpClient = HttpClient.newHttpClient();
-    private final String resendApiUrl = "https://api.resend.com/emails";
+    @Autowired
+    private JavaMailSender mailSender;
 
     @Override
     public void sendEmail(String toEmail, String subject, String body) {
         try {
-            String apiKey = System.getenv("RESEND_API_KEY");
-            if (apiKey == null || apiKey.trim().isEmpty()) {
-                logger.error("RESEND_API_KEY environment variable is missing on Render!");
-                return;
-            }
+            logger.info("Sending OTP email from edubillichandu768@gmail.com to: {}", toEmail);
 
-            // 🟢 Resend Free Tier Rule: Send to registered Resend account email
-            String targetEmail = "chanduanil768@gmail.com";
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            logger.info("Sending OTP email for requested recipient {} -> sending to Resend owner email: {}", toEmail, targetEmail);
+            helper.setFrom("RechargeHub <edubillichandu768@gmail.com>");
+            helper.setTo(toEmail.trim());
+            helper.setSubject(subject);
+            helper.setText("<h3>" + body + "</h3>", true);
 
-            String jsonInputString = String.format(
-                "{\"from\":\"RechargeHub <onboarding@resend.dev>\",\"to\":[\"%s\"],\"subject\":\"%s\",\"html\":\"<h3>%s</h3>\"}",
-                targetEmail,
-                subject.replace("\"", "\\\""),
-                body.replace("\"", "\\\"").replace("\n", "<br/>")
-            );
+            mailSender.send(message);
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(resendApiUrl))
-                    .header("Authorization", "Bearer " + apiKey.trim())
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonInputString, StandardCharsets.UTF_8))
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            logger.info("Resend API Response Code: {}", response.statusCode());
-            logger.info("Resend API Response Body: {}", response.body());
+            logger.info("OTP Email sent successfully from edubillichandu768@gmail.com to: {}", toEmail);
 
         } catch (Exception e) {
-            logger.error("Error sending email via Resend API: {}", e.getMessage(), e);
+            logger.error("Error sending email via Gmail SMTP: {}", e.getMessage(), e);
         }
     }
 }
