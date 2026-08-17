@@ -17,28 +17,29 @@ public class EmailServiceImpl implements EmailService {
             LoggerFactory.getLogger(EmailServiceImpl.class);
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
-
-    // 🟢 Verified Permanent Resend API Key & Endpoint
-    private final String resendApiKey = "re_TCN9LvLw_8cruipnZXxr7RUgoL9VoKJeg";
     private final String resendApiUrl = "https://api.resend.com/emails";
 
     @Override
     public void sendEmail(String toEmail, String subject, String body) {
         try {
-            logger.info("Sending OTP email via Resend API to: {}", toEmail);
+            String apiKey = System.getenv("RESEND_API_KEY");
+            if (apiKey == null || apiKey.trim().isEmpty()) {
+                logger.error("RESEND_API_KEY environment variable is missing on Render!");
+                return;
+            }
 
-            String targetEmail = toEmail.trim();
+            logger.info("Sending OTP email via Resend API to: {}", toEmail);
 
             String jsonInputString = String.format(
                 "{\"from\":\"RechargeHub <onboarding@resend.dev>\",\"to\":[\"%s\"],\"subject\":\"%s\",\"html\":\"<h3>%s</h3>\"}",
-                targetEmail,
+                toEmail.trim(),
                 subject.replace("\"", "\\\""),
                 body.replace("\"", "\\\"").replace("\n", "<br/>")
             );
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(resendApiUrl))
-                    .header("Authorization", "Bearer " + resendApiKey.trim())
+                    .header("Authorization", "Bearer " + apiKey.trim())
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonInputString, StandardCharsets.UTF_8))
                     .build();
