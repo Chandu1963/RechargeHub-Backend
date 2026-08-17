@@ -18,14 +18,14 @@ public class EmailServiceImpl implements EmailService {
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
-    // 🟢 Verified Resend API Key & Endpoint
-    private final String resendApiKey = "re_WVaMhRFS_5DrS9YiHf2JCBSaLcNWn2cMc";
+    // 🟢 Verified Permanent Resend API Key & Endpoint
+    private final String resendApiKey = "re_TCN9LvLw_8cruipnZXxr7RUgoL9VoKJeg";
     private final String resendApiUrl = "https://api.resend.com/emails";
 
     @Override
     public void sendEmail(String toEmail, String subject, String body) {
         try {
-            logger.info("Sending OTP email to {} via Resend API...", toEmail);
+            logger.info("Sending OTP email via Resend API to: {}", toEmail);
 
             String targetEmail = toEmail.trim();
 
